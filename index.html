@@ -1579,9 +1579,167 @@
       animation: loveReveal 1200ms cubic-bezier(.2,.8,.2,1) 2500ms forwards !important;
     }
 
+
+    /* BIRTHDAY DATE LOCK */
+    body.date-locked {
+      overflow: hidden !important;
+    }
+
+    .date-lock {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 50% 38%, rgba(255,255,255,.88) 0 10rem, transparent 27rem),
+        linear-gradient(145deg, #fffaf2 0%, #fae5e7 52%, #f7d7df 100%);
+      color: #46363c;
+      text-align: center;
+      transition: opacity 900ms ease, visibility 900ms ease;
+    }
+
+    .date-lock.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .date-lock-card {
+      width: min(92vw, 620px);
+      padding: clamp(30px, 6vw, 58px) clamp(20px, 6vw, 56px);
+      border: 1px solid rgba(184,102,118,.16);
+      border-radius: 24px;
+      background: rgba(255,250,245,.62);
+      box-shadow:
+        0 28px 70px rgba(82,53,61,.14),
+        inset 0 1px 0 rgba(255,255,255,.7);
+      backdrop-filter: blur(14px);
+    }
+
+    .date-lock-heart {
+      margin-bottom: 12px;
+      color: #c76578;
+      font-size: clamp(2.4rem, 8vw, 4rem);
+      line-height: 1;
+      animation: lockHeart 1800ms ease-in-out infinite;
+    }
+
+    .date-lock h1 {
+      margin: 0;
+      color: #3d3035;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2rem, 7vw, 3.6rem);
+      font-weight: 400;
+      line-height: 1.05;
+    }
+
+    .date-lock p {
+      margin: 14px auto 0;
+      max-width: 500px;
+      color: #7d656d;
+      font-family: "Trebuchet MS", Arial, sans-serif;
+      font-size: clamp(.95rem, 3vw, 1.1rem);
+      line-height: 1.6;
+    }
+
+    .countdown {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: clamp(7px, 2vw, 14px);
+      margin-top: 30px;
+    }
+
+    .count-box {
+      min-width: 0;
+      padding: 14px 8px 12px;
+      border: 1px solid rgba(184,102,118,.16);
+      border-radius: 14px;
+      background: rgba(255,255,255,.42);
+    }
+
+    .count-number {
+      display: block;
+      color: #9d5868;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.65rem, 6vw, 2.6rem);
+      line-height: 1;
+    }
+
+    .count-label {
+      display: block;
+      margin-top: 7px;
+      color: #8b7078;
+      font-family: "Trebuchet MS", Arial, sans-serif;
+      font-size: .72rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .unlock-note {
+      margin-top: 22px !important;
+      color: rgba(70,54,60,.56) !important;
+      font-size: .82rem !important;
+    }
+
+    @keyframes lockHeart {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
+    @media (max-width: 480px) {
+      .date-lock-card {
+        padding: 30px 16px;
+        border-radius: 20px;
+      }
+
+      .countdown {
+        gap: 6px;
+      }
+
+      .count-box {
+        padding: 12px 5px 10px;
+      }
+
+      .count-label {
+        font-size: .62rem;
+      }
+    }
+
   </style>
 </head>
-<body>
+<body class="date-locked">
+
+  <div class="date-lock" id="dateLock" aria-live="polite">
+    <div class="date-lock-card">
+      <div class="date-lock-heart" aria-hidden="true">♥</div>
+      <h1>Something special is waiting...</h1>
+      <p>The birthday surprise will open on <strong>August 29</strong>.</p>
+
+      <div class="countdown" aria-label="Countdown to August 29">
+        <div class="count-box">
+          <span class="count-number" id="countDays">00</span>
+          <span class="count-label">Days</span>
+        </div>
+        <div class="count-box">
+          <span class="count-number" id="countHours">00</span>
+          <span class="count-label">Hours</span>
+        </div>
+        <div class="count-box">
+          <span class="count-number" id="countMinutes">00</span>
+          <span class="count-label">Minutes</span>
+        </div>
+        <div class="count-box">
+          <span class="count-number" id="countSeconds">00</span>
+          <span class="count-label">Seconds</span>
+        </div>
+      </div>
+
+      <p class="unlock-note">Come back when the countdown reaches zero ♡</p>
+    </div>
+  </div>
+
   <main class="scene" aria-label="Birthday opening scene">
     <div class="particles" id="particles" aria-hidden="true"></div>
     <div class="confetti" id="confetti" aria-hidden="true"></div>
@@ -1682,6 +1840,47 @@
   </main>
 
   <script>
+
+    // Date lock: the full birthday website unlocks at midnight on August 29, 2026
+    // using Qatar time (UTC+03:00).
+    const dateLock = document.getElementById("dateLock");
+    const countDays = document.getElementById("countDays");
+    const countHours = document.getElementById("countHours");
+    const countMinutes = document.getElementById("countMinutes");
+    const countSeconds = document.getElementById("countSeconds");
+
+    const unlockAt = new Date("2026-08-29T00:00:00+03:00");
+
+    function updateDateLock() {
+      const remaining = unlockAt.getTime() - Date.now();
+
+      if (remaining <= 0) {
+        document.body.classList.remove("date-locked");
+        dateLock.classList.add("hidden");
+        window.setTimeout(() => dateLock.remove(), 950);
+        return;
+      }
+
+      const totalSeconds = Math.floor(remaining / 1000);
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      countDays.textContent = String(days).padStart(2, "0");
+      countHours.textContent = String(hours).padStart(2, "0");
+      countMinutes.textContent = String(minutes).padStart(2, "0");
+      countSeconds.textContent = String(seconds).padStart(2, "0");
+    }
+
+    updateDateLock();
+    const dateLockTimer = window.setInterval(() => {
+      updateDateLock();
+      if (Date.now() >= unlockAt.getTime()) {
+        window.clearInterval(dateLockTimer);
+      }
+    }, 1000);
+
     const config = {
       herName: "My Love",
       childhoodPhoto: "",
